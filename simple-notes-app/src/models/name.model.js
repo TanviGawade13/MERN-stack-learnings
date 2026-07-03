@@ -1,0 +1,1 @@
+// This will contain the schema and model of the collection 
