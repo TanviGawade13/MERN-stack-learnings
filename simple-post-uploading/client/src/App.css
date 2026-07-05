@@ -1,0 +1,85 @@
+/* ==========================================
+   Create Post Page Styles
+   ========================================== */
+.create-post-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: 20px;
+    gap: 20px;
+}
+
+.create-post-section h1 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.create-post-section form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.create-post-section input[type="text"],
+.create-post-section input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    outline: none;
+}
+
+.create-post-section button {
+    width: 100%;
+    padding: 12px;
+    background-color: #000;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* ==========================================
+   Feed / Post List Page Styles
+   ========================================== */
+.feed-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    padding: 20px;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+.post-card {
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.post-card img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    object-fit: cover;
+}
+
+.post-card h3 {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+}
