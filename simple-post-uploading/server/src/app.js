@@ -3,10 +3,11 @@ const express = require('express')
 const multer = require('multer')
 const uploadFile = require('./services/storage.service')
 const postModel = require('./models/post.model')
-const cors = require('cors')
+const cors = require('cors')  //cors is always setup on the backend
 
 const app = express()
-app.use(cors())
+app.use(cors())  //this says allow any cross origin to access the website 
+//You can also allow specific websites only for private apps
 app.use(express.json())
 
 

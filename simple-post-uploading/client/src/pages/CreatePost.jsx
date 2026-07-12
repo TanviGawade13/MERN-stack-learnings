@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import axios from 'axios'
+import axios from 'axios' //used to talk to the backend (axios is mainly for web communication)
 import { useNavigate } from 'react-router-dom'
 
 const CreatePost = () => {
