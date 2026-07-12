@@ -3,7 +3,8 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const generateOtp = require('../utils/generateOtp')
 const sendOTPEmail = require('../utils/sendOTPEmail')
-const OTP_TIME = 10*60*1000
+const OTP_TIME = 10*60*1000;
+const OTP_ATTEMPTS = 3;
 
 const register = async (req, res) => {
     try {
@@ -32,8 +33,7 @@ const register = async (req, res) => {
         await sendOTPEmail(email, rawOTP)
 
         res.status(201).json({
-            message: "User created successfully",
-            user
+            message: "User created successfully"
         })
     }catch(err){
         res.status(500).json({
@@ -51,18 +51,20 @@ const login = async (req, res) => {
                 message: "User not found"
             })
         }
+
+        if(!user.isVerified) return res.status(400).json({message: "Please verify gmail first"})
         const password = req.body.password
         const dbPass = user.password
 
         const result = await bcrypt.compare(password , dbPass)
         if (result) {
             const accessToken = jwt.sign(
-                {   userid: user._id  , tokenVersion: user.tokenVersion },
+                {   userid: user._id    },
                 process.env.ACCESS_SECRET_KEY,
                 {   expiresIn : "15m"    }
             )
             const refreshToken = jwt.sign(
-                {   userid: user._id   },
+                {   userid: user._id ,  tokenVersion: user.tokenVersion   },
                 process.env.REFRESH_SECRET_KEY,
                 {   expiresIn : "7d"    }
             )
@@ -71,7 +73,6 @@ const login = async (req, res) => {
             });
             return res.status(200).json({     //json via data send karte hai taki data ek structured format mai frontend tak jaye
                 message: "User logged in successfully",
-                user,
                 accessToken: accessToken
             })
         } else {
@@ -90,12 +91,11 @@ const getProfile = async(req,res) =>{
     try{
         const user = await User.findById(req.userId)
         if(!user){
-            return res.status(404).json("User not found")
+            return res.status(404).json({message: "User not found"})
         }
     
         res.json({
-            message: "Accessed profile successfully",
-            user
+            message: "Accessed profile successfully"
         })
     }catch(err){
         res.status(500).json({
@@ -114,6 +114,7 @@ const refreshAccessToken = async(req,res)=>{
             message: "No refresh token provided"
         })
     }
+    
     let decoded;  //let use kiya becoz const se sirf ek baar declare kiya jaa sakta hai 
     try{
         decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY)
@@ -123,12 +124,15 @@ const refreshAccessToken = async(req,res)=>{
         })
     }
 
+    //to check if user ne kahi aur logout all devices to nahi kara na 
+    
     const user = await User.findById(decoded.userid)  //user chchiye kyuki hume access token banane ke liye user.id lagta hai
     //aur yeh bhi check karna padta hai ki woh user accesstoken request karte time avaiable hai db mai ya delete ho gaya 
     //because refresh token mai login ke time ka user.id diya tha aur uske baad acct delete bhi kiya ja sakta hai 
     if(!user){
         return res.status(404).json({ message: "User not found" })
     }
+    if(decoded.tokenVersion != user.tokenVersion) return res.status(400).json({message: "Session revoked. Please login again"})
 
     const accessToken = jwt.sign(
     {   userid: user._id   },
@@ -156,11 +160,39 @@ const logoutAllDevices = async(req,res)=>{
     }
 }
 
+const verifyOTP =async(req,res)=>{
+    try{
+        const {email, otp} = req.body
+        const user = await User.findOne({ email: email})
+        if(!user) return res.status(400).json({message: "User not found"})
+        if(user.isVerified) return res.json({message: "User already verified"})
+        if(user.otpAttempts >= OTP_ATTEMPTS) return res.status(400).json({message: "Login again"})
+        if(user.otpExpiry<Date.now()) return res.status(400).json({message: "OTP Invalid"})
+        const newOTP = await bcrypt.compare(otp,user.otp)
+        if(newOTP){
+            user.isVerified= true,
+            user.otp = null,
+            user.otpExpiry = null,
+            user.otpAttempts = 0
+            await user.save()
+            return res.json({message: "OTP validated"})
+        }else{
+            user.otpAttempts+=1;
+            await user.save()
+            return res.status(400).json({message: "Invalid otp , request a new one"})
+        }
+    }catch(err){
+        res.status(500).json({ message: `Server error: ${err.message}` });
+    }
+    
+}
+
 module.exports = {
     register,
     login,
     getProfile,
     refreshAccessToken,
     logout,
-    logoutAllDevices
+    logoutAllDevices,
+    verifyOTP
 }
