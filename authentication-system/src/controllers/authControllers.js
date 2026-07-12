@@ -1,6 +1,9 @@
 const User = require('../models/user.model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const generateOtp = require('../utils/generateOtp')
+const sendOTPEmail = require('../utils/sendOTPEmail')
+const OTP_TIME = 10*60*1000
 
 const register = async (req, res) => {
     try {
@@ -10,13 +13,23 @@ const register = async (req, res) => {
                 message: "Username, Email and password should not be empty"
             })
         }
-        const hashedPass = await bcrypt.hash(password,10)
 
+        const exists = await User.findOne({email: email})
+        if(exists) return res.status(400).json({message: "User already exists"})
+
+
+        const hashedPass = await bcrypt.hash(password,10)
+        const rawOTP = generateOtp()
+        const hashedOtp = await bcrypt.hash(rawOTP, 10)
+        
         const user = await User.create({
             username,
             email,
-            password: hashedPass
+            password: hashedPass,
+            otp: hashedOtp,
+            otpExpiry: new Date(Date.now() + OTP_TIME)
         })
+        await sendOTPEmail(email, rawOTP)
 
         res.status(201).json({
             message: "User created successfully",

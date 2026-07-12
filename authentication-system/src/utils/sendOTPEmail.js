@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 export const sendOTPEmail = (email,otp)=>{
     try{
         await transporter.sendMail({
-            from: AUTH SYSTEM
+            // from: "AUTH SYSTEM" <
         })
     }catch(err){
 
